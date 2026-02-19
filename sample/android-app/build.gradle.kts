@@ -4,12 +4,14 @@
 
 plugins {
     id("dev.icerock.moko.gradle.android.application")
-    id("dev.icerock.mobile.multiplatform-units")
-    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
-    buildFeatures.dataBinding = true
+    namespace = "com.icerockdev"
+    buildFeatures {
+        compose = true
+    }
 
     defaultConfig {
         applicationId = "dev.icerock.moko.samples.paging"
@@ -22,17 +24,13 @@ android {
 }
 
 dependencies {
-    implementation(libs.appCompat)
-    implementation(libs.recyclerView)
-    implementation(libs.lifecycle)
-    implementation(libs.swipeRefreshLayout)
-    implementation(libs.mokoUnitsDataBinding)
-
+    implementation(libs.activityCompose)
+    implementation(platform(libs.composeBom))
+    implementation(libs.composeMaterial3)
+    implementation(libs.composeUi)
+    implementation(libs.composeUiToolingPreview)
+    implementation(libs.lifecycleRuntimeCompose)
     implementation(projects.sample.mppLibrary)
-}
 
-multiplatformUnits {
-    classesPackage = "com.icerockdev"
-    dataBindingPackage = "com.icerockdev"
-    layoutsSourceSet = "main"
+    debugImplementation(libs.composeUiTooling)
 }

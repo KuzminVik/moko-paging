@@ -1,38 +1,38 @@
 [versions]
-kotlinVersion = "1.6.20"
-androidAppCompatVersion = "1.2.0"
-androidLifecycleVersion = "2.1.0"
-androidCoreTestingVersion = "2.1.0"
-recyclerViewVersion = "1.1.0"
-swipeRefreshLayoutVersion = "1.1.0"
-ktorClientVersion = "2.0.0"
-coroutinesVersion = "1.6.0-native-mt"
-mokoMvvmVersion = "0.12.0"
-mokoResourcesVersion = "0.18.0"
+kotlinVersion = "2.1.10"
+lifecycleVersion = "2.8.7"
+androidCoreTestingVersion = "2.2.0"
+composeBomVersion = "2025.09.00"
+activityComposeVersion = "1.10.1"
+ktorClientVersion = "2.3.12"
+coroutinesVersion = "1.10.2"
+mokoMvvmVersion = "0.16.1"
 mokoUnitsVersion = "0.8.0"
-mokoPagingVersion = "0.7.2"
+mokoPagingVersion = "1.0.0"
+napierVersion = "2.7.1"
 
 [libraries]
-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "androidAppCompatVersion" }
-recyclerView = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerViewVersion" }
-lifecycle = { module = "androidx.lifecycle:lifecycle-extensions", version.ref = "androidLifecycleVersion" }
-swipeRefreshLayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swipeRefreshLayoutVersion" }
+lifecycleViewModel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleVersion" }
+lifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleVersion" }
+activityCompose = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
+composeBom = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
+composeUi = { module = "androidx.compose.ui:ui" }
+composeUiTooling = { module = "androidx.compose.ui:ui-tooling" }
+composeUiToolingPreview = { module = "androidx.compose.ui:ui-tooling-preview" }
+composeMaterial3 = { module = "androidx.compose.material3:material3" }
 coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesVersion" }
+coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesVersion" }
 ktorClient = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientVersion" }
-mokoResources = { module = "dev.icerock.moko:resources", version.ref = "mokoResourcesVersion" }
 mokoUnits = { module = "dev.icerock.moko:units", version.ref = "mokoUnitsVersion" }
-mokoUnitsDataBinding = { module = "dev.icerock.moko:units-databinding", version.ref = "mokoUnitsVersion" }
 mokoMvvmLiveData = { module = "dev.icerock.moko:mvvm-livedata", version.ref = "mokoMvvmVersion" }
 mokoMvvmState = { module = "dev.icerock.moko:mvvm-state", version.ref = "mokoMvvmVersion" }
+mokoMvvmFlow = { module = "dev.icerock.moko:mvvm-flow", version.ref = "mokoMvvmVersion" }
+napier = { module = "io.github.aakira:napier", version.ref = "napierVersion" }
 kotlinTestJUnit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlinVersion" }
 androidCoreTesting = { module = "androidx.arch.core:core-testing", version.ref = "androidCoreTestingVersion" }
 ktorClientMock = { module = "io.ktor:ktor-client-mock", version.ref = "ktorClientVersion" }
 
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinVersion" }
-androidGradlePlugin = { module = "com.android.tools.build:gradle", version = "7.0.4" }
-googleServicesGradlePlugin = { module = "com.google.gms:google-services", version = "4.3.8" }
-firebaseGradlePlugin = { module = "com.google.firebase:firebase-crashlytics-gradle", version = "2.2.0" }
-mokoGradlePlugin = { module = "dev.icerock.moko:moko-gradle-plugin", version = "0.1.0" }
-mobileMultiplatformGradlePlugin = { module = "dev.icerock:mobile-multiplatform", version = "0.14.1" }
-kotlinSerializationGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlinVersion" }
-mokoUnitsGeneratorGradlePlugin = { module = "dev.icerock.moko:units-generator", version.ref = "mokoUnitsVersion" }
+androidGradlePlugin = { module = "com.android.tools.build:gradle", version = "8.6.1" }
+mokoGradlePlugin = { module = "dev.icerock.moko:moko-gradle-plugin", version = "0.6.0" }
+mobileMultiplatformGradlePlugin = { module = "dev.icerock:mobile-multiplatform", version = "0.14.4" }

@@ -4,109 +4,108 @@
 
 package com.icerockdev.library
 
-import dev.icerock.moko.mvvm.ResourceState
-import dev.icerock.moko.mvvm.livedata.LiveData
-import dev.icerock.moko.mvvm.livedata.dataTransform
-import dev.icerock.moko.mvvm.livedata.errorTransform
-import dev.icerock.moko.mvvm.livedata.map
-import dev.icerock.moko.mvvm.livedata.mediatorOf
+import dev.icerock.moko.mvvm.flow.CStateFlow
+import dev.icerock.moko.mvvm.flow.cStateFlow
 import dev.icerock.moko.mvvm.viewmodel.ViewModel
-import dev.icerock.moko.paging.IdComparator
-import dev.icerock.moko.paging.IdEntity
-import dev.icerock.moko.paging.LambdaPagedListDataSource
+import dev.icerock.moko.paging.PageSizePagingDataSource
 import dev.icerock.moko.paging.Pagination
-import dev.icerock.moko.units.TableUnitItem
+import dev.icerock.moko.paging.PagingState
+import dev.icerock.moko.paging.RefreshStrategy
+import dev.icerock.moko.remotestate.RemoteState
+import dev.icerock.moko.remotestate.mapError
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlin.math.min
 
-private const val PAGE_LOAD_DURATION_MS: Long = 2000
-
-class ListViewModel(
-    private val unitsFactory: UnitsFactory
-) : ViewModel() {
-    private val pagination: Pagination<Product> = Pagination(
-        parentScope = viewModelScope,
-        dataSource = LambdaPagedListDataSource {
-            delay(PAGE_LOAD_DURATION_MS)
-
-            it?.plus(generatePack(it.size.toLong())) ?: generatePack()
+class ListViewModel : ViewModel() {
+    private val pagination: Pagination<ProductItem> = Pagination(
+        dataSource = PageSizePagingDataSource(
+            pageSize = PAGE_SIZE,
+            loadPage = ::loadPage
+        ),
+        itemKey = { item -> item.id },
+        refreshStrategy = RefreshStrategy.ReplaceEverything,
+        nextPageListener = { result ->
+            result.onFailure {
+                Napier.e("can't load next page", it)
+            }
         },
-        comparator = IdComparator(),
-        nextPageListener = ::onNextPageResult,
-        refreshListener = ::onRefreshResult,
-        initValue = generatePack()
-    )
-
-    val isRefreshing: LiveData<Boolean> = pagination.refreshLoading
-    val state: LiveData<ResourceState<List<TableUnitItem>, String>> = pagination.state
-        .dataTransform {
-            mediatorOf(
-                this.map { productList ->
-                    productList.map { product ->
-                        unitsFactory.createProductUnit(
-                            id = product.id,
-                            title = product.title
-                        )
-                    }
-                },
-                pagination.nextPageLoading
-            ) { items, nextPageLoading ->
-                if (nextPageLoading) {
-                    items.plus(unitsFactory.createLoading())
-                } else {
-                    items
-                }
+        refreshListener = { result ->
+            result.onFailure {
+                Napier.e("can't load refresh", it)
             }
         }
-        .errorTransform {
-            map { it.toString() }
+    )
+
+    val state: CStateFlow<RemoteState<PagingState<ProductItem>, Throwable>> =
+        pagination.state.map { state ->
+            state.mapError { it }
+        }.cStateIn(viewModelScope, initValue = RemoteState.Loading)
+
+    fun onStart() {
+        viewModelScope.launch {
+            pagination.loadFirstPage()
         }
-
-    fun onRetryPressed() {
-        pagination.loadFirstPage()
-    }
-
-    fun onLoadNextPage() {
-        pagination.loadNextPage()
     }
 
     fun onRefresh() {
-        pagination.refresh()
-    }
-
-    private fun onNextPageResult(result: Result<List<Product>>) {
-        if (result.isSuccess) {
-            println("next page successful loaded")
-        } else {
-            println("next page loading failed ${result.exceptionOrNull()}")
+        viewModelScope.launch {
+            if (pagination.state.value is RemoteState.Success<*>) {
+                pagination.refresh()
+            } else {
+                pagination.loadFirstPage()
+            }
         }
     }
 
-    private fun onRefreshResult(result: Result<List<Product>>) {
-        if (result.isSuccess) {
-            println("refresh successful")
-        } else {
-            println("refresh failed ${result.exceptionOrNull()}")
+    fun onLoadNextPage() {
+        viewModelScope.launch {
+            pagination.loadNextPage()
         }
     }
 
-    @Suppress("MagicNumber")
-    private fun generatePack(startId: Long = 0): List<Product> {
-        return List(20) { idx ->
-            val id = startId + idx
-            Product(
-                id = id,
-                title = "Product $id"
-            )
+    private suspend fun loadPage(page: Int, pageSize: Int): List<ProductItem> {
+        // delay simulated loading
+        delay(REFRESH_DELAY_MS)
+        val startIndex = page * pageSize
+
+        if (startIndex >= TOTAL_ITEMS) return emptyList()
+
+        val endIndex = min(startIndex + pageSize, TOTAL_ITEMS)
+
+        return (startIndex until endIndex).map { index ->
+            val id = index + 1L
+            ProductItem(id = id, title = "Product #$id")
         }
     }
 
-    data class Product(
-        override val id: Long,
+    data class ProductItem(
+        val id: Long,
         val title: String
-    ) : IdEntity
+    )
 
-    interface UnitsFactory {
-        fun createProductUnit(id: Long, title: String): TableUnitItem
-        fun createLoading(): TableUnitItem
+    private companion object {
+        const val PAGE_SIZE = 20
+        const val TOTAL_ITEMS = 120
+        const val REFRESH_DELAY_MS = 300L
     }
 }
+
+/**
+ * Сокращенный вариант создания CStateFlow из Flow
+ */
+fun <T> Flow<T>.cStateIn(
+    scope: CoroutineScope,
+    started: SharingStarted = SharingStarted.Eagerly,
+    initValue: T,
+): CStateFlow<T> = this.stateIn(
+    scope = scope,
+    started = started,
+    initialValue = initValue
+).cStateFlow()

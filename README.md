@@ -15,15 +15,14 @@ This is a Kotlin MultiPlatform library that contains pagination logic for kotlin
 - [License](#license)
 
 ## Features
-- **Pagination** implements pagination logic for the data from abstract `PagedListDataSource`.
-- Managing a data loading process using **Pagination** asynchronous functions: `loadFirstPage`, `loadNextPage`,
-`refresh` or their duplicates with `suspend` modifier.
-- Observing states of **Pagination** using `LiveData` from **moko-mvvm**.
+- **Pagination** implements pagination logic for the data from `PagingDataSource`.
+- Managing data loading using `loadFirstPage`, `loadNextPage`, `refresh`.
+- Observing states using `StateFlow` and `RemoteState`.
 
 ## Requirements
-- Gradle version 6.8+
-- Android API 16+
-- iOS version 11.0+
+- Gradle 8.10+
+- Android API 21+
+- iOS 11.0+
 
 ## Installation
 root build.gradle  
@@ -35,10 +34,11 @@ allprojects {
 }
 ```
 
-project build.gradle
-```groovy
+project build.gradle.kts
+```kotlin
 dependencies {
     commonMainApi("dev.icerock.moko:paging:0.7.1")
+    commonMainApi("dev.icerock.moko:remotestate:0.1.0")
 }
 ```
 
@@ -49,30 +49,20 @@ You can use **Pagination** in `commonMain` sourceset.
 **Pagination** creation:
 
 ```kotlin
-val pagination: Pagination<Int> = Pagination(
-        parentScope = coroutineScope,
-        dataSource = LambdaPagedListDataSource { currentList ->
-            extrenalRepository.loadPage(currentList) 
-        },
-        comparator = Comparator { a: Int, b: Int ->
-            a - b
-        },
-        nextPageListener = { result: Result<List<Int>> ->
-            if (result.isSuccess) {
-                println("Next page successful loaded")
-            } else {
-                println("Next page loading failed")
-            }
-        },
-        refreshListener = { result: Result<List<Int>> ->
-            if (result.isSuccess) {
-                println("Refresh successful")
-            } else {
-                println("Refresh failed")
-            }
-        },
-        initValue = listOf(1, 2, 3)
-    )
+val pagination: Pagination<Item> = Pagination(
+    dataSource = PageSizePagingDataSource(
+        pageSize = 20,
+        loadPage = { page, pageSize -> repository.load(page = page, pageSize = pageSize) }
+    ),
+    itemKey = { item -> item.id },
+    refreshStrategy = RefreshStrategy.ReplaceEverything,
+    nextPageListener = { result ->
+        result.onFailure { println("Next page loading failed: $it") }
+    },
+    refreshListener = { result ->
+        result.onFailure { println("Refresh failed: $it") }
+    }
+)
 ```
 
 Managing data loading:
@@ -94,20 +84,16 @@ pagination.setData(itemsList)
 Observing **Pagination** states:
 
 ```kotlin
-// Observing the state of the pagination
-pagination.state.addObserver { state: ResourceState<List<ItemClass>, Throwable> -> 
-    // ...
-}
+val state: StateFlow<RemoteState<PagingState<Item>, Throwable>> = pagination.state
 
-// Observing the next page loading process
-pagination.nextPageLoading.addObserver { isLoading: Boolean -> 
-    // ...
-}
-
-// Observing the refresh process
-pagination.refreshLoading.addObserver { isRefreshing: Boolean -> 
-    // ...    
-}
+state
+    .map { remoteState ->
+        when (remoteState) {
+            is RemoteState.Success -> remoteState.data.items
+            else -> emptyList()
+        }
+    }
+    .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 ```
 
 ## Samples

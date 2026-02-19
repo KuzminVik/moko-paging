@@ -10,15 +10,34 @@ plugins {
 }
 
 kotlin {
-  jvm()
+    jvm()
+
+    sourceSets {
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.coroutinesTest)
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.coroutinesTest)
+            }
+        }
+    }
+}
+
+android {
+    namespace = "dev.icerock.moko.paging"
 }
 
 dependencies {
+    commonMainApi(projects.remotestate)
     commonMainImplementation(libs.coroutines)
+    commonMainImplementation(libs.napier)
     commonMainApi(libs.mokoMvvmLiveData)
     commonMainApi(libs.mokoMvvmState)
 
-    commonTestImplementation(libs.kotlinTestJUnit)
+    commonTestImplementation(kotlin("test"))
     androidTestImplementation(libs.androidCoreTesting)
     commonTestImplementation(libs.ktorClient)
     commonTestImplementation(libs.ktorClientMock)

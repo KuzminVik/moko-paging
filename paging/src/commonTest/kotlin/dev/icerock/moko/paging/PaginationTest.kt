@@ -4,7 +4,8 @@
 
 package dev.icerock.moko.paging
 
-import kotlinx.coroutines.CoroutineScope
+import dev.icerock.moko.remotestate.data
+import dev.icerock.moko.remotestate.isSuccess
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlin.test.BeforeTest
@@ -15,10 +16,6 @@ class PaginationTest : BaseTestsClass() {
 
     var paginationDataSource = TestListDataSource(3, 5)
 
-    val itemsComparator = Comparator { a: Int, b: Int ->
-        a - b
-    }
-
     @BeforeTest
     fun setup() {
         paginationDataSource = TestListDataSource(3, 5)
@@ -28,13 +25,13 @@ class PaginationTest : BaseTestsClass() {
     fun `load first page`() = runTest {
         val pagination = createPagination()
 
-        pagination.loadFirstPageSuspend()
+        pagination.loadFirstPage()
 
         assertTrue {
             pagination.state.value.isSuccess()
         }
         assertTrue {
-            pagination.state.value.dataValue()!!.compareWith(listOf(0, 1, 2))
+            pagination.state.value.data?.items?.compareWith(listOf(0, 1, 2)) == true
         }
     }
 
@@ -42,17 +39,17 @@ class PaginationTest : BaseTestsClass() {
     fun `load next page`() = runTest {
         val pagination = createPagination()
 
-        pagination.loadFirstPageSuspend()
-        pagination.loadNextPageSuspend()
+        pagination.loadFirstPage()
+        pagination.loadNextPage()
 
         assertTrue {
-            pagination.state.value.dataValue()!!.compareWith(listOf(0, 1, 2, 3, 4, 5))
+            pagination.state.value.data?.items?.compareWith(listOf(0, 1, 2, 3, 4, 5)) == true
         }
 
-        pagination.loadNextPageSuspend()
+        pagination.loadNextPage()
 
         assertTrue {
-            pagination.state.value.dataValue()!!.compareWith(listOf(0, 1, 2, 3, 4, 5, 6, 7, 8))
+            pagination.state.value.data?.items?.compareWith(listOf(0, 1, 2, 3, 4, 5, 6, 7, 8)) == true
         }
     }
 
@@ -60,12 +57,12 @@ class PaginationTest : BaseTestsClass() {
     fun `refresh pagination`() = runTest {
         val pagination = createPagination()
 
-        pagination.loadFirstPageSuspend()
-        pagination.loadNextPageSuspend()
-        pagination.refreshSuspend()
+        pagination.loadFirstPage()
+        pagination.loadNextPage()
+        pagination.refresh(RefreshStrategy.ReplaceEverything)
 
         assertTrue {
-            pagination.state.value.dataValue()!!.compareWith(listOf(0, 1, 2))
+            pagination.state.value.data?.items?.compareWith(listOf(0, 1, 2)) == true
         }
     }
 
@@ -73,45 +70,48 @@ class PaginationTest : BaseTestsClass() {
     fun `set data`() = runTest {
         val pagination = createPagination()
 
-        pagination.loadFirstPageSuspend()
-        pagination.loadNextPageSuspend()
+        pagination.loadFirstPage()
+        pagination.loadNextPage()
 
         val setList = listOf(5, 2, 3, 1, 4)
-        pagination.setDataSuspend(setList)
+        pagination.setData(setList)
 
         assertTrue {
-            pagination.state.value.dataValue()!!.compareWith(setList)
+            pagination.state.value.data?.items?.compareWith(setList) == true
         }
     }
 
     @Test
     fun `double refresh`() = runTest {
         var counter = 0
-        val pagination = Pagination<Int>(
-            parentScope = this,
-            dataSource = LambdaPagedListDataSource {
-                val load = counter++
-                println("start load new page with $it")
-                delay(100)
-                println("respond new list $load")
-                listOf(1, 2, 3, 4)
+        val pagination = Pagination(
+            dataSource = object : PagingDataSource<Int> {
+                override fun isPageFull(list: List<Int>): Boolean = list.size == 4
+
+                override suspend fun loadPage(currentList: List<Int>?): List<Int> {
+                    val load = counter++
+                    println("start load new page with $currentList")
+                    delay(100)
+                    println("respond new list $load")
+                    return listOf(1, 2, 3, 4)
+                }
             },
-            comparator = itemsComparator,
+            itemKey = { it },
             nextPageListener = { },
             refreshListener = { }
         )
 
         println("start load first page")
-        pagination.loadFirstPageSuspend()
+        pagination.loadFirstPage()
         println("end load first page")
 
         println("start double refresh")
         val r1 = async {
-            pagination.refreshSuspend()
+            pagination.refresh()
             println("first refresh end")
         }
         val r2 = async {
-            pagination.refreshSuspend()
+            pagination.refresh()
             println("second refresh end")
         }
 
@@ -119,13 +119,12 @@ class PaginationTest : BaseTestsClass() {
         r2.await()
     }
 
-    private fun CoroutineScope.createPagination(
+    private fun createPagination(
         nextPageListener: (Result<List<Int>>) -> Unit = {},
         refreshListener: (Result<List<Int>>) -> Unit = {}
-    ) = Pagination<Int>(
-        parentScope = this,
+    ) = Pagination(
         dataSource = paginationDataSource,
-        comparator = itemsComparator,
+        itemKey = { it },
         nextPageListener = nextPageListener,
         refreshListener = refreshListener
     )

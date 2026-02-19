@@ -4,11 +4,15 @@
 
 package dev.icerock.moko.paging
 
-class TestListDataSource(val pageSize: Int, val totalPagesCount: Int) : PagedListDataSource<Int> {
-    val dataList = (0 .. pageSize * totalPagesCount).map { it }
+class TestListDataSource(val pageSize: Int, val totalPagesCount: Int) : PagingDataSource<Int> {
+    private val dataList = (0 until pageSize * totalPagesCount).toList()
+
+    override fun isPageFull(list: List<Int>): Boolean = list.size == pageSize
 
     override suspend fun loadPage(currentList: List<Int>?): List<Int> {
         val offset = currentList?.size ?: 0
-        return dataList.subList(offset, offset + pageSize)
+        val endIndex = (offset + pageSize).coerceAtMost(dataList.size)
+
+        return dataList.subList(offset, endIndex)
     }
 }

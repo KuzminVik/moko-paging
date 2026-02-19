@@ -8,20 +8,24 @@ plugins {
     id("dev.icerock.moko.gradle.detekt")
 }
 
+android {
+    namespace = "com.icerockdev.library"
+}
+
 dependencies {
     commonMainImplementation(libs.coroutines)
 
     commonMainApi(projects.paging)
     commonMainApi(libs.mokoUnits)
-    commonMainApi(libs.mokoMvvmLiveData)
+    commonMainApi(libs.mokoMvvmFlow)
     commonMainApi(libs.mokoMvvmState)
-    commonMainApi(libs.mokoResources)
 
-    androidMainImplementation(libs.lifecycle)
+    commonMainImplementation(libs.napier)
+    androidMainImplementation(libs.lifecycleViewModel)
 }
 
 framework {
     export(libs.mokoUnits)
-    export(libs.mokoMvvmLiveData)
+    export(libs.mokoMvvmFlow)
     export(libs.mokoMvvmState)
 }

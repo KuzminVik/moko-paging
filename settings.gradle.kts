@@ -2,11 +2,21 @@
  * Copyright 2020 IceRock MAG Inc. Use of this source code is governed by the Apache 2.0 license.
  */
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+    plugins {
+        id("org.jetbrains.kotlin.plugin.compose") version "2.1.10"
+    }
+}
+
 plugins {
     id("com.gradle.enterprise") version "3.10.1"
 }
 
-enableFeaturePreview("VERSION_CATALOGS")
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {
@@ -25,5 +35,6 @@ gradleEnterprise {
 }
 
 include(":paging")
+include(":remotestate")
 include(":sample:android-app")
 include(":sample:mpp-library")

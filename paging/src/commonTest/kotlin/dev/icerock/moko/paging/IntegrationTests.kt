@@ -8,7 +8,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respondOk
 import io.ktor.client.request.get
-import io.ktor.client.statement.*
+import dev.icerock.moko.remotestate.data
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.fullPath
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -43,18 +44,21 @@ class IntegrationTests : BaseTestsClass() {
 
     @Test
     fun parallelRequests() = runTest {
-        val pagination = Pagination<String>(
-            parentScope = this,
-            dataSource = LambdaPagedListDataSource {
-                println("start load new page with $it")
-                val randomJoke: String = httpClient
-                    .get("http://api.icndb.com/jokes/random")
-                    .bodyAsText()
+        val pagination = Pagination(
+            dataSource = object : PagingDataSource<String> {
+                override fun isPageFull(list: List<String>): Boolean = list.size == 1
 
-                println("respond new item $randomJoke")
-                listOf(randomJoke)
+                override suspend fun loadPage(currentList: List<String>?): List<String> {
+                    println("start load new page with $currentList")
+                    val randomJoke: String = httpClient
+                        .get("http://api.icndb.com/jokes/random")
+                        .bodyAsText()
+
+                    println("respond new item $randomJoke")
+                    return listOf(randomJoke)
+                }
             },
-            comparator = Comparator { a, b -> a.compareTo(b) },
+            itemKey = { it },
             nextPageListener = { },
             refreshListener = { }
         )
@@ -62,19 +66,19 @@ class IntegrationTests : BaseTestsClass() {
         for (i in 0..10) {
             println("--- ITERATION $i START ---")
             println("start load first page")
-            pagination.loadFirstPageSuspend()
+            pagination.loadFirstPage()
             println("end load first page")
 
             (0..3).flatMap {
                 listOf(
                     async {
                         println("--> $it refresh start")
-                        pagination.refreshSuspend()
+                        pagination.refresh()
                         println("<-- $it refresh end")
                     },
                     async {
                         println("--> $it load next page start")
-                        pagination.loadNextPageSuspend()
+                        pagination.loadNextPage()
                         println("<-- $it load next page end")
                     }
                 )
@@ -84,18 +88,21 @@ class IntegrationTests : BaseTestsClass() {
 
     @Test
     fun parallelRequestsAndSetData() = runTest {
-        val pagination = Pagination<String>(
-            parentScope = this,
-            dataSource = LambdaPagedListDataSource {
-                println("start load new page with $it")
-                val randomJoke: String = httpClient
-                    .get("http://api.icndb.com/jokes/random")
-                    .bodyAsText()
+        val pagination = Pagination(
+            dataSource = object : PagingDataSource<String> {
+                override fun isPageFull(list: List<String>): Boolean = list.size == 1
 
-                println("respond new item $randomJoke")
-                listOf(randomJoke)
+                override suspend fun loadPage(currentList: List<String>?): List<String> {
+                    println("start load new page with $currentList")
+                    val randomJoke: String = httpClient
+                        .get("http://api.icndb.com/jokes/random")
+                        .bodyAsText()
+
+                    println("respond new item $randomJoke")
+                    return listOf(randomJoke)
+                }
             },
-            comparator = Comparator { a, b -> a.compareTo(b) },
+            itemKey = { it },
             nextPageListener = { },
             refreshListener = { }
         )
@@ -103,26 +110,26 @@ class IntegrationTests : BaseTestsClass() {
         for (i in 0..10) {
             println("--- ITERATION $i START ---")
             println("start load first page")
-            pagination.loadFirstPageSuspend()
+            pagination.loadFirstPage()
             println("end load first page")
 
             (0..1).flatMap {
                 listOf(
                     async {
                         println("--> $it refresh start")
-                        pagination.refreshSuspend()
+                        pagination.refresh()
                         println("<-- $it refresh end")
                     },
                     async {
                         println("--> $it load next page start")
-                        pagination.loadNextPageSuspend()
+                        pagination.loadNextPage()
                         println("<-- $it load next page end")
                     },
                     async {
                         println("--> $it set data start")
-                        val data = pagination.state.value.dataValue().orEmpty()
+                        val data = pagination.state.value.data?.items.orEmpty()
                         val newData = data.plus("new item")
-                        pagination.setDataSuspend(newData)
+                        pagination.setData(newData)
                         println("--> $it set data end")
                     }
                 )
@@ -134,25 +141,28 @@ class IntegrationTests : BaseTestsClass() {
     fun closingScope() = runTest {
         val exc = runCatching {
             coroutineScope {
-                val pagination = Pagination<String>(
-                    parentScope = this,
-                    dataSource = LambdaPagedListDataSource {
-                        println("start load new page with $it")
-                        val randomJoke: String = httpClient
-                            .get("http://api.icndb.com/jokes/random")
-                            .bodyAsText()
+                val pagination = Pagination(
+                    dataSource = object : PagingDataSource<String> {
+                        override fun isPageFull(list: List<String>): Boolean = list.size == 1
 
-                        println("respond new item $randomJoke")
-                        listOf(randomJoke)
+                        override suspend fun loadPage(currentList: List<String>?): List<String> {
+                            println("start load new page with $currentList")
+                            val randomJoke: String = httpClient
+                                .get("http://api.icndb.com/jokes/random")
+                                .bodyAsText()
+
+                            println("respond new item $randomJoke")
+                            return listOf(randomJoke)
+                        }
                     },
-                    comparator = Comparator { a, b -> a.compareTo(b) },
+                    itemKey = { it },
                     nextPageListener = { },
                     refreshListener = { }
                 )
 
                 launch {
                     println("start load")
-                    pagination.loadFirstPageSuspend()
+                    pagination.loadFirstPage()
                     println("end load")
                 }
 
