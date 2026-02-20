@@ -3,11 +3,11 @@ package dev.icerock.moko.paging
 import kotlin.math.ceil
 
 /**
- * Возвращает количество страниц, необходимых для вывода всех элементов.
+ * Returns the number of pages required to display all items.
  *
- * @param currentListSize Количество элементов (может быть null)
- * @param pageSize Размер одной страницы (должен быть > 0)
- * @return Количество страниц (целое неотрицательное число)
+ * @param currentListSize number of items (can be null)
+ * @param pageSize size of a single page (must be > 0)
+ * @return number of pages (a non-negative integer)
  */
 fun calculateNextPage(
     currentListSize: Int?,

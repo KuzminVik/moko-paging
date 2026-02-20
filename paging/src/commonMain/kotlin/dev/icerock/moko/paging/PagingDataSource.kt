@@ -1,30 +1,30 @@
 package dev.icerock.moko.paging
 
 /**
- * Интерфейс датасурса для Pagination
+ * Data source interface for Pagination.
  */
 interface PagingDataSource<Item> {
     /**
-     * Метод проверки полная ли страница загружена (чтобы понять достигли ли мы конца списка)
+     * Checks whether a page is fully loaded (to determine if we've reached the end of the list).
      */
     fun isPageFull(list: List<Item>): Boolean
 
     /**
-     * Метод загрузки страницы на основе текущих данных
+     * Loads a page based on the current data.
      *
-     * @param currentList загруженные элементы списка
+     * @param currentList already loaded list items
      *
-     * Возвращаемое значение - следующая страница
-     * */
+     * @return the next page
+     */
     suspend fun loadPage(currentList: List<Item>?): List<Item>
 }
 
 /**
- * Имплементация интерфейса PagingDataSource для постраничной загрузки через page/pageSize
+ * PagingDataSource implementation for page/pageSize-based pagination.
  *
- * @param pageSize размер страницы
- * @param loadPage suspend метод для постраничной загрузки списка
- * */
+ * @param pageSize page size
+ * @param loadPage suspend method for page-by-page loading
+ */
 @Suppress("FunctionName")
 fun <Item> PageSizePagingDataSource(
     pageSize: Int,

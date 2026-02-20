@@ -12,27 +12,27 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Пагинированная загрузка списка
+ * Paginated list loader.
  *
- * обновленная версия moko-paging, перешли на StateFlow
+ * Updated version of moko-paging, migrated to StateFlow.
  *
- * @param dataSource реализация интерфейса PagingDataSource с suspend методом загрузки элементов
- * @param itemKey Лямбда для получения уникального ключа элемента `(Item) -> Any`.
- * Используется для идентификации элементов (аналог equals/hashCode) и дедупликации
- * при слиянии страниц (например, чтобы избежать дублей, если элемент сместился на другую страницу).
- * @param refreshStrategy Стратегия поведения при обновлении (Pull-to-Refresh).
- * Определяет, как поступать с уже загруженными данными при получении первой страницы:
- * - [RefreshStrategy.MergeNewItems]: Пытается сохранить старые данные, добавляя новые в начало.
- * Подходит для append-only списков (логи, чаты). Может приводить к рассинхрону при удалении
- * элементов на бэкенде.
- * - [RefreshStrategy.ReplaceEverything]: Полная замена. При успехе загрузки старый список
- * полностью отбрасывается и заменяется новой первой страницей. Позволяет избежать "моргания"
- * экрана (в отличие от reloadFirstPage), сохраняя старые данные видимыми до момента получения новых.
- * @param nextPageListener обработчик завершения загрузки следующей страницы,
- * вызывать для показа ошибки либо дополнительной обработки успеха
- * @param refreshListener обработчик завершения загрузки обновления списка
- * @param initValue начальное значение списка
- * */
+ * @param dataSource implementation of PagingDataSource with a suspend load method
+ * @param itemKey lambda returning a unique item key `(Item) -> Any`.
+ * Used for item identity (equals/hashCode analogue) and deduplication
+ * when merging pages (for example, to avoid duplicates if an item moved to another page).
+ * @param refreshStrategy refresh behavior (Pull-to-Refresh).
+ * Defines how to handle already loaded data when the first page is fetched:
+ * - [RefreshStrategy.MergeNewItems]: Tries to keep old data by adding new items to the beginning.
+ * Suitable for append-only lists (logs, chats). Can lead to desync when items are deleted
+ * on the backend.
+ * - [RefreshStrategy.ReplaceEverything]: Full replacement. On successful load the old list
+ * is discarded and replaced by the new first page. Helps avoid UI "blink"
+ * (unlike reloadFirstPage), keeping old data visible until new data arrives.
+ * @param nextPageListener callback invoked when the next page load completes,
+ * use it to show errors or handle success
+ * @param refreshListener callback invoked when the refresh load completes
+ * @param initValue initial list value
+ */
 class Pagination<Item>(
     private val dataSource: PagingDataSource<Item>,
     private val itemKey: (Item) -> Any,
@@ -48,10 +48,10 @@ class Pagination<Item>(
     )
 
     /**
-     * Стэйт пагинированного списка
+     * State of the paginated list.
      *
-     * Пример использования: во ViewModel мапить стейт,
-     * преобразовывая Throwable в необходимый класс ошибки для вывода на ui
+     * Usage example: map the state in a ViewModel,
+     * converting Throwable to the error class required for UI output
      *    pagination.state
      *       .map { state ->
      *            state.mapError { it.mapThrowable<Throwable, StringDesc>() }
@@ -64,17 +64,16 @@ class Pagination<Item>(
     private var loadNextPageJob: Job? = null
 
     /**
-     * Загрузка первой страницы данных.
+     * Loads the first page of data.
      *
-     * В случае загрузки первой страницы считаем что текущий стейт не нужен - сбрасываемся в полную
-     * загрузку. Далее в зависимости от успешности загрузки либо перейдем в успех, либо в ошибку.
+     * When loading the first page, the current state is discarded and we reset to full loading.
+     * Then, depending on the result, we move to success or error.
      *
-     * Если в момент вызова уже идет рефреш/загрузка другой страницы - вся эта активность отменяется,
-     * загрузка первой страницы имеет максимальный приоритет (пользователь хочет полностью данные с
-     * нуля загрузить).
+     * If a refresh or another page load is running at the moment of the call, all that activity
+     * is canceled. Loading the first page has the highest priority (the user wants a full reload
+     * from scratch).
      *
-     * Если повторно вызываем когда уже запущено - ничего не делается (ждем предыдущий запущенный
-     * результат).
+     * If called again while already running, nothing happens (we wait for the previous result).
      */
     suspend fun loadFirstPage() {
         // если уже есть задача загрузки новой страницы - просто ждём её завершения.
@@ -122,17 +121,16 @@ class Pagination<Item>(
     }
 
     /**
-     * Загрузка следующей страницы данных.
+     * Loads the next page of data.
      *
-     * Следующую страницу мы можем загружать только если находимся в состоянии успеха (то есть
-     * уже есть какие-то элементы в списке - первая или больше страниц).
-     * И если у нас в стейте отражено что список закончен - смысла пытаться подгружать еще элементы
-     * нету.
+     * We can load the next page only if we are in the success state (i.e., there are already
+     * items in the list - one or more pages). If the state indicates the list is finished,
+     * there is no point in loading more.
      *
-     * Если в момент вызова еще уже загрузка первой страницы - мы ничего не делаем (выше описание).
-     * Если же идет загрузка refresh (обновление первой страницы, без полного сброса) - ждем пока
-     * оно завершится, чтобы список не деформировался.
-     * Если уже идет загрузка новой страницы - ничего не делаем (необходимая операция уже запущена).
+     * If the first page is still loading when called, we do nothing (see above).
+     * If a refresh is running (updating the first page without a full reset), we wait for it
+     * to finish to avoid distorting the list.
+     * If a next page load is already running, we do nothing (the required operation is in flight).
      */
     @Suppress("ReturnCount")
     suspend fun loadNextPage() {
@@ -233,28 +231,26 @@ class Pagination<Item>(
     }
 
     /**
-     * Обновление содержимого списка без сброса в состояние Loading.
-     * Позволяет загрузить новые данные, сохраняя на экране текущие (Pull-to-Refresh).
+     * Refreshes the list contents without resetting to the Loading state.
+     * Loads new data while keeping the current items visible (Pull-to-Refresh).
      *
-     * @param refreshStrategy Стратегия обновления для текущего вызова.
-     * По умолчанию используется стратегия, заданная в конструкторе ([this.refreshStrategy]).
+     * @param refreshStrategy refresh strategy for this call.
+     * By default, uses the strategy configured in the constructor ([this.refreshStrategy]).
      *
-     * Варианты поведения:
+     * Behavior variants:
      * - [RefreshStrategy.MergeNewItems]:
-     * Если новые и старые данные пересекаются (есть одинаковые элементы) — старый список
-     * сохраняется, новые элементы добавляются в начало.
-     * Если пересечения нет — происходит полная замена списка.
+     * If new and old data overlap (there are identical items) the old list is preserved
+     * and new items are prepended. If there is no overlap, the list is fully replaced.
      * - [RefreshStrategy.ReplaceEverything]:
-     * Полная замена списка новыми данными. Старые данные остаются на экране до момента
-     * успешной загрузки новых, затем мгновенно заменяются.
-     * Используется, например, при изменении фильтров, когда объединение старых и новых
-     * данных некорректно.
+     * Fully replaces the list with new data. Old data stays on screen until the new
+     * data is successfully loaded, then it is replaced immediately.
+     * Used, for example, when filters change and merging old and new data is incorrect.
      *
-     * Условия запуска:
-     * - Выполняется только если данные уже загружены (состояние [RemoteState.Success]).
-     * - Если уже идет обновление ([refreshJob]) — ожидает его завершения.
-     * - Если идет загрузка следующей страницы ([loadNextPageJob]) — ожидает её завершения,
-     * чтобы избежать коллизий и деформации списка.
+     * Launch conditions:
+     * - Runs only if data is already loaded (state is [RemoteState.Success]).
+     * - If a refresh is already running ([refreshJob]), waits for it to complete.
+     * - If a next page load is running ([loadNextPageJob]), waits for it to complete
+     * to avoid collisions and list distortion.
      */
     suspend fun refresh(refreshStrategy: RefreshStrategy = this.refreshStrategy) {
         if (_state.value !is RemoteState.Success<*>) return
@@ -323,13 +319,13 @@ class Pagination<Item>(
     }
 
     /**
-     * Метод для ручного обновления списка снаружи
+     * Method for manually updating the list from the outside.
      *
-     * Выполняет попытку атомарно изменить данные,
-     * Если стейт RemoteState.Success, обновит значение списка, не затрагивая другие данные
-     * Иначе присвоит значение RemoteState.Success c заданным значением списка элементов
+     * Attempts to update the data atomically.
+     * If the state is RemoteState.Success, updates the list value without touching other data.
+     * Otherwise sets RemoteState.Success with the provided list value.
      *
-     * Так же остановятся все джобы по загрузке новых данных
+     * Also cancels all jobs that load new data.
      */
     fun setData(items: List<Item>?) {
         loadFirstPageJob?.cancel()

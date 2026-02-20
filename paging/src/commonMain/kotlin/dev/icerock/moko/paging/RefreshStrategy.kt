@@ -2,22 +2,22 @@ package dev.icerock.moko.paging
 
 enum class RefreshStrategy {
     /**
-     * "Умное" добавление.
-     * Загружает первую страницу и пытается "приклеить" новые элементы к началу списка.
-     * Игнорирует элементы, которые уже есть в списке (даже если их данные изменились).
-     * Старые страницы (2, 3...) остаются в памяти.
+     * "Smart" merge.
+     * Loads the first page and tries to prepend new items to the list.
+     * Ignores items that are already in the list (even if their data changed).
+     * Old pages (2, 3...) stay in memory.
      *
-     * Подходит для: Ленты новостей, логи, бесконечные потоки.
+     * Suitable for: news feeds, logs, infinite streams.
      */
     MergeNewItems,
 
     /**
-     * Полная перезагрузка.
-     * Загружает первую страницу и ПОЛНОСТЬЮ заменяет текущий список.
-     * Гарантирует актуальность данных. Сбрасывает пагинацию на начало.
+     * Full reload.
+     * Loads the first page and COMPLETELY replaces the current list.
+     * Ensures data freshness. Resets pagination to the start.
      *
-     * Подходит для: Каталогов товаров, списков заявок, банковских операций,
-     * любых списков, где данные элементов могут меняться.
+     * Suitable for: product catalogs, request lists, bank transactions,
+     * any lists where item data can change.
      */
     ReplaceEverything
 }

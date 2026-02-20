@@ -98,7 +98,7 @@ class ListViewModel : ViewModel() {
 }
 
 /**
- * Сокращенный вариант создания CStateFlow из Flow
+ * A shortened way to create a CStateFlow from a Flow.
  */
 fun <T> Flow<T>.cStateIn(
     scope: CoroutineScope,

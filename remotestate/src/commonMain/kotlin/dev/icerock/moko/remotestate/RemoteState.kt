@@ -6,8 +6,8 @@ import dev.icerock.moko.remotestate.RemoteState.Success
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * Сделано именно class, а не interface, чтобы на iOS стороне можно было hashable сделать реализацию.
- * Также типы сделаны обязательно не нуллабельными тоже для iOS - чтобы нуллы не ожидал компилятор везде.
+ * Implemented as a class, not an interface, so iOS can provide a hashable implementation.
+ * Types are intentionally non-nullable for iOS so the compiler does not expect nulls everywhere.
  */
 sealed class RemoteState<out T : Any, out E : Any> {
     data object Loading : RemoteState<Nothing, Nothing>()
@@ -40,10 +40,10 @@ fun <T : Any, E : Any> RemoteState<T, E>.isSuccess(): Boolean = this is Success
 val <T : Any, E : Any> RemoteState<T, E>.data: T? get() = (this as? Success<T>)?.data
 
 /**
- * Выполняет попытку атомарно изменить данные в состоянии RemoteState.Success
+ * Attempts to atomically update data in the RemoteState.Success state.
  *
- * @param function лямбда получения новых данных из текущих
- * @return true если удалось обновить Success состояние. false - если состояние уже не Success.
+ * @param function lambda that computes new data from the current value
+ * @return true if the Success state was updated, false if the state is no longer Success
  */
 fun <T : Any, E : Any> MutableStateFlow<RemoteState<T, E>>.tryUpdateSuccess(
     function: (T) -> T
