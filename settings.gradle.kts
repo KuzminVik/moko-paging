@@ -35,6 +35,7 @@ gradleEnterprise {
 }
 
 include(":paging")
+include(":paging-compose")
 include(":remotestate")
 include(":sample:android-app")
 include(":sample:mpp-library")

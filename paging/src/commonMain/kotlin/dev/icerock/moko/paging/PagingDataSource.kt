@@ -1,3 +1,7 @@
+/*
+ * Copyright 2020 IceRock MAG Inc. Use of this source code is governed by the Apache 2.0 license.
+ */
+
 package dev.icerock.moko.paging
 
 /**
@@ -12,8 +16,6 @@ interface PagingDataSource<Item> {
     /**
      * Loads a page based on the current data.
      *
-     * @param currentList already loaded list items
-     *
      * @return the next page
      */
     suspend fun loadPage(currentList: List<Item>?): List<Item>
@@ -23,11 +25,13 @@ interface PagingDataSource<Item> {
  * PagingDataSource implementation for page/pageSize-based pagination.
  *
  * @param pageSize page size
+ * @param calculateNextPage returns the number of next page
  * @param loadPage suspend method for page-by-page loading
  */
 @Suppress("FunctionName")
 fun <Item> PageSizePagingDataSource(
     pageSize: Int,
+    calculateNextPage: (List<Item>?) -> Int,
     loadPage: suspend (page: Int, pageSize: Int) -> List<Item>
 ): PagingDataSource<Item> {
     return object : PagingDataSource<Item> {
@@ -36,12 +40,9 @@ fun <Item> PageSizePagingDataSource(
         }
 
         override suspend fun loadPage(currentList: List<Item>?): List<Item> {
-            val page: Int = calculateNextPage(
-                currentListSize = currentList?.size,
-                pageSize = pageSize
-            )
+            val nextPage: Int = calculateNextPage(currentList)
 
-            return loadPage(page, pageSize)
+            return loadPage(nextPage, pageSize)
         }
     }
 }

@@ -16,16 +16,13 @@ dependencies {
     commonMainImplementation(libs.coroutines)
 
     commonMainApi(projects.paging)
-    commonMainApi(libs.mokoUnits)
     commonMainApi(libs.mokoMvvmFlow)
     commonMainApi(libs.mokoMvvmState)
 
-    commonMainImplementation(libs.napier)
     androidMainImplementation(libs.lifecycleViewModel)
 }
 
 framework {
-    export(libs.mokoUnits)
     export(libs.mokoMvvmFlow)
     export(libs.mokoMvvmState)
 }

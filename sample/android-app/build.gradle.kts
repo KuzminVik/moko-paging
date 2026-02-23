@@ -13,11 +13,15 @@ android {
         compose = true
     }
 
+    compileSdk = 35
+
     defaultConfig {
         applicationId = "dev.icerock.moko.samples.paging"
 
         versionCode = 1
         versionName = "0.1.0"
+
+        minSdk = 21
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -31,6 +35,7 @@ dependencies {
     implementation(libs.composeUiToolingPreview)
     implementation(libs.lifecycleRuntimeCompose)
     implementation(projects.sample.mppLibrary)
+    implementation(projects.pagingCompose)
 
     debugImplementation(libs.composeUiTooling)
 }

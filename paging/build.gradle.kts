@@ -11,19 +11,6 @@ plugins {
 
 kotlin {
     jvm()
-
-    sourceSets {
-        val androidUnitTest by getting {
-            dependencies {
-                implementation(libs.coroutinesTest)
-            }
-        }
-        val jvmTest by getting {
-            dependencies {
-                implementation(libs.coroutinesTest)
-            }
-        }
-    }
 }
 
 android {
@@ -33,12 +20,12 @@ android {
 dependencies {
     commonMainApi(projects.remotestate)
     commonMainImplementation(libs.coroutines)
-    commonMainImplementation(libs.napier)
     commonMainApi(libs.mokoMvvmLiveData)
     commonMainApi(libs.mokoMvvmState)
 
     commonTestImplementation(kotlin("test"))
     androidTestImplementation(libs.androidCoreTesting)
+    androidUnitTestImplementation(libs.coroutinesTest)
     commonTestImplementation(libs.ktorClient)
     commonTestImplementation(libs.ktorClientMock)
     iosX64TestImplementation(libs.coroutines)

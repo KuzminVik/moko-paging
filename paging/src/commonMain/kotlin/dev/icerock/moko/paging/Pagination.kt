@@ -1,7 +1,12 @@
+/*
+ * Copyright 2020 IceRock MAG Inc. Use of this source code is governed by the Apache 2.0 license.
+ */
+
 package dev.icerock.moko.paging
 
+import dev.icerock.moko.paging.utils.withNextPageLoading
+import dev.icerock.moko.paging.utils.withRefreshing
 import dev.icerock.moko.remotestate.RemoteState
-import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -76,15 +81,15 @@ class Pagination<Item>(
      * If called again while already running, nothing happens (we wait for the previous result).
      */
     suspend fun loadFirstPage() {
-        // если уже есть задача загрузки новой страницы - просто ждём её завершения.
-        // Корутину завершим только когда задача завершится - чтобы вызывающая сторона точно понимала
-        // что загрузка завершилась
+        // if there is already a task to load a new page, we are just waiting for it to be completed.
+        // Coroutines we will complete it only when the task is completed - so that the caller understands exactly
+        // that the download has completed
         loadFirstPageJob?.let {
             it.join()
             return
         }
 
-        // если есть рефреш/загрузка - отменяем
+        // if there is a refresh/download, we cancel it.
         refreshJob?.let {
             it.cancel()
             refreshJob = null
@@ -110,11 +115,10 @@ class Pagination<Item>(
                 } catch (exc: CancellationException) {
                     throw exc
                 } catch (exc: Exception) {
-                    Napier.e("can't load first page", exc)
                     _state.value = RemoteState.Error(exc)
                 }
             }.apply {
-                // зануляем завершенную задачу
+                // resetting a completed task
                 invokeOnCompletion { loadFirstPageJob = null }
             }
         }
@@ -137,21 +141,21 @@ class Pagination<Item>(
         val currentState: RemoteState.Success<PagingState<Item>> =
             _state.value as? RemoteState.Success<PagingState<Item>> ?: return
 
-        // если уже всё выкачали - не надо нам ничего больше делать
+        // If everything has already been uploaded, we don't need to do anything else
         if (currentState.data.isEndOfList) return
 
-        // если уже грузим след страницу - просто ждем результат этой загрузки
+        // if we are already uploading the next page, we are just waiting for the result of this download
         loadNextPageJob?.let {
             it.join()
             return
         }
-        // если идет рефреш - ждем пока закончится, только потом действуем сами
+        // if there is a refresh, we wait until it ends, only then we act on our own
         refreshJob?.join()
 
         coroutineScope {
             loadNextPageJob = launch {
-                // Повторно проверяем стейт, так как с предыдущей проверки, другая корутина
-                // могла изменить его
+                // We re-check the state, because from the previous check, another coroutine
+                // could have changed him
                 val latest =
                     _state.value as? RemoteState.Success<PagingState<Item>> ?: return@launch
                 if (latest.data.isEndOfList) return@launch
@@ -165,15 +169,15 @@ class Pagination<Item>(
 
                     _state.value = RemoteState.Success(newState)
 
-                    // выдаем полученные значения новой страницы
+                    // We give out the received values of the new page
                     nextPageItems
                 }.onFailure { exc ->
                     if (exc is CancellationException) throw exc
 
-                    Napier.e("can't load next page", exc)
-                    // Проверяем что текущий стейт, Success, если другая корутина изменила его
-                    // ничего не делаем
+                    // We check that the current state is Success, if another coroutine has changed it
+                    // we're not doing anything
                     val successState = _state.value as? RemoteState.Success<PagingState<Item>>
+
                     if (successState != null) {
                         _state.value = successState.withNextPageLoading(false)
                     }
@@ -181,20 +185,20 @@ class Pagination<Item>(
                     nextPageListener(result)
                 }
             }.apply {
-                // зануляем завершенную задачу
+                // resetting a completed task
                 invokeOnCompletion { loadNextPageJob = null }
             }
         }
     }
 
     suspend fun reloadFirstPage() {
-        // если уже есть задача загрузки первой страницы - отменяем её.
+        // if there is already a task to load the first page, cancel it.
         loadFirstPageJob?.let {
             it.cancel()
             loadFirstPageJob = null
         }
 
-        // если есть рефреш/загрузка - отменяем
+        // if there is a refresh/download, we cancel it.
         refreshJob?.let {
             it.cancel()
             refreshJob = null
@@ -220,11 +224,10 @@ class Pagination<Item>(
                 } catch (exc: CancellationException) {
                     throw exc
                 } catch (exc: Exception) {
-                    Napier.e("can't load first page", exc)
                     _state.value = RemoteState.Error(exc)
                 }
             }.apply {
-                // зануляем завершенную задачу
+                // resetting a completed task
                 invokeOnCompletion { loadFirstPageJob = null }
             }
         }
@@ -255,18 +258,17 @@ class Pagination<Item>(
     suspend fun refresh(refreshStrategy: RefreshStrategy = this.refreshStrategy) {
         if (_state.value !is RemoteState.Success<*>) return
 
-        // идет обновление - ждем его результат
+        // An update is underway - we are waiting for its result.
         refreshJob?.let {
             it.join()
             return
         }
-        // идет загрузка новой страницы - дожидаемся её и погнали
+        // A new page is loading, so we wait for it and let's go.
         loadNextPageJob?.join()
 
         coroutineScope {
             refreshJob = launch {
-                // Повторно проверяем стейт, так как с предыдущей проверки, другая корутина
-                // могла изменить его
+                // We re-check the state, since from the previous check, another coroutine could have changed it
                 val currentState = _state.value as? RemoteState.Success<PagingState<Item>>
                     ?: return@launch
 
@@ -277,7 +279,7 @@ class Pagination<Item>(
 
                     when (refreshStrategy) {
                         RefreshStrategy.ReplaceEverything -> {
-                            // Просто берем новые данные. Старое удаляем.
+                            // We just take new data. We are deleting the old one.
                             val isEndOfList = !dataSource.isPageFull(newItems)
 
                             _state.value = RemoteState.Success(
@@ -298,12 +300,11 @@ class Pagination<Item>(
                         }
                     }
 
-                    // передаем полученный список в результат
+                    // Passing the received list to the result.
                     newItems
                 }.onFailure { exc ->
                     if (exc is CancellationException) throw exc
 
-                    Napier.e("can't refresh list of services", exc)
                     val latest = _state.value as? RemoteState.Success<PagingState<Item>>
                     if (latest != null) {
                         _state.value = latest.withRefreshing(false)
@@ -312,7 +313,7 @@ class Pagination<Item>(
                     refreshListener(result)
                 }
             }.apply {
-                // зануляем завершенную задачу
+                // resetting a completed task
                 invokeOnCompletion { refreshJob = null }
             }
         }
@@ -352,17 +353,16 @@ class Pagination<Item>(
         currentList: List<Item>,
         nextPageItems: List<Item>
     ): PagingState<Item> {
-        // убираем элементы которые уже есть в оригинальном списке
-        // такая ситуация может происходить когда новые элементы появились в начале списка
-        // (на тех страницах что у нас уже загружены)
+        // removing the items that are already in the original list
+        // This situation may occur when new items appear at the top of the list.
+        // (on the pages that we have already uploaded)
         val currentKeys = currentList.map(itemKey).toHashSet()
         val filteredItems = nextPageItems.filter { itemKey(it) !in currentKeys }
         val newList: List<Item> = currentList + filteredItems
 
         return PagingState(
             items = newList,
-            // если мы получили в ответ на страницу меньше элементов
-            // чем запрашивали - значит список кончился
+            // if we received fewer items in response to the page what was requested means that the list is over
             isEndOfList = !dataSource.isPageFull(nextPageItems)
         )
     }
@@ -373,14 +373,14 @@ class Pagination<Item>(
     ): PagingState<Item> {
         val currentItems: List<Item> = currentState.data.items
 
-        // Используем itemKey для быстрого поиска
+        // We use ItemKey for quick search
         val currentKeys = currentItems.map(itemKey).toHashSet()
 
-        // Проверяем, есть ли пересечение (хотя бы один элемент из новых уже есть в старых)
+        // Checking if there is an intersection (at least one of the new elements already exists in the old ones)
         val hasIntersection = newItems.any { itemKey(it) in currentKeys }
 
-        // Если есть новые элементы, но нет пересечения со старыми и старые не пустые -
-        // считаем, что лента уехала полностью, делаем полную замену
+        // If there are new elements, but there is no intersection with the old ones and the old ones
+        // are not empty, we assume that the tape is completely gone, we make a complete replacement.
         if (!hasIntersection && newItems.isNotEmpty() && currentItems.isNotEmpty()) {
             return PagingState(
                 items = newItems,
@@ -388,21 +388,21 @@ class Pagination<Item>(
             )
         }
 
-        // Оставляем только те новые элементы, ключей которых нет в старом списке
+        // We leave only those new items whose keys are not in the old list.
         val uniqueNewItems = newItems.filter { item ->
             itemKey(item) !in currentKeys
         }
 
         val newState: PagingState<Item> = if (uniqueNewItems.isNotEmpty()) {
-            // Добавляем уникальные новые в начало + все старые
-            // isEndOfList не трогаем, так как старые элементы остались
+            // Adding unique new ones to the beginning + all the old ones
+            // We do not touch the isEndOfList, as the old elements remain.
             PagingState(
                 items = uniqueNewItems + currentItems,
                 isEndOfList = currentState.data.isEndOfList
             )
         } else {
-            // Если ничего нового нет - оставляем всё как было
-            // (или заменяем на newItems, если список был пуст)
+            // If there is nothing new, we leave everything as it was.
+            // (or replace it with NewItems if the list was empty)
             if (currentItems.isEmpty()) {
                 PagingState(
                     items = newItems,

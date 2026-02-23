@@ -4,12 +4,10 @@ lifecycleVersion = "2.8.7"
 androidCoreTestingVersion = "2.2.0"
 composeBomVersion = "2025.09.00"
 activityComposeVersion = "1.10.1"
-ktorClientVersion = "2.3.12"
+ktorClientVersion = "3.4.0"
 coroutinesVersion = "1.10.2"
 mokoMvvmVersion = "0.16.1"
-mokoUnitsVersion = "0.8.0"
-mokoPagingVersion = "1.0.0"
-napierVersion = "2.7.1"
+mokoPagingVersion = "0.8.0"
 
 [libraries]
 lifecycleViewModel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleVersion" }
@@ -23,12 +21,9 @@ composeMaterial3 = { module = "androidx.compose.material3:material3" }
 coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesVersion" }
 coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesVersion" }
 ktorClient = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientVersion" }
-mokoUnits = { module = "dev.icerock.moko:units", version.ref = "mokoUnitsVersion" }
 mokoMvvmLiveData = { module = "dev.icerock.moko:mvvm-livedata", version.ref = "mokoMvvmVersion" }
 mokoMvvmState = { module = "dev.icerock.moko:mvvm-state", version.ref = "mokoMvvmVersion" }
 mokoMvvmFlow = { module = "dev.icerock.moko:mvvm-flow", version.ref = "mokoMvvmVersion" }
-napier = { module = "io.github.aakira:napier", version.ref = "napierVersion" }
-kotlinTestJUnit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlinVersion" }
 androidCoreTesting = { module = "androidx.arch.core:core-testing", version.ref = "androidCoreTestingVersion" }
 ktorClientMock = { module = "io.ktor:ktor-client-mock", version.ref = "ktorClientVersion" }
 

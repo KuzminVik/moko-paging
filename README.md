@@ -16,12 +16,12 @@ This is a Kotlin MultiPlatform library that contains pagination logic for kotlin
 
 ## Features
 - **Pagination** implements pagination logic for the data from `PagingDataSource`.
-- Managing data loading using `loadFirstPage`, `loadNextPage`, `refresh`.
+- Managing data loading using `loadFirstPage`, `reloadFirstPage`, `loadNextPage`, `refresh`.
 - Observing states using `StateFlow` and `RemoteState`.
 
 ## Requirements
 - Gradle 8.10+
-- Android API 21+
+- Android API 16+
 - iOS 11.0+
 
 ## Installation
@@ -37,7 +37,7 @@ allprojects {
 project build.gradle.kts
 ```kotlin
 dependencies {
-    commonMainApi("dev.icerock.moko:paging:0.7.1")
+    commonMainApi("dev.icerock.moko:paging:0.8.0")
     commonMainApi("dev.icerock.moko:remotestate:0.1.0")
 }
 ```
@@ -52,6 +52,9 @@ You can use **Pagination** in `commonMain` sourceset.
 val pagination: Pagination<Item> = Pagination(
     dataSource = PageSizePagingDataSource(
         pageSize = 20,
+        calculateNextPage = { currentList ->
+            // your logic for calculating the next page
+        },
         loadPage = { page, pageSize -> repository.load(page = page, pageSize = pageSize) }
     ),
     itemKey = { item -> item.id },
@@ -84,16 +87,21 @@ pagination.setData(itemsList)
 Observing **Pagination** states:
 
 ```kotlin
-val state: StateFlow<RemoteState<PagingState<Item>, Throwable>> = pagination.state
+val state: RemoteState<PagingState<YourItem>, Throwable> by viewModel.pagination.state.collectAsState()
 
-state
-    .map { remoteState ->
-        when (remoteState) {
-            is RemoteState.Success -> remoteState.data.items
-            else -> emptyList()
-        }
+when (state) {
+    RemoteState.Loading -> {
+        // ...
     }
-    .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    is RemoteState.Error -> {
+        // ...
+    }
+
+    is RemoteState.Success<PagingState<YourItem>> -> {
+        // ...
+    }
+}
 ```
 
 ## Samples

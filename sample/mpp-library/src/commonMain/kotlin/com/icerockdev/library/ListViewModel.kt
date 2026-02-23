@@ -13,7 +13,6 @@ import dev.icerock.moko.paging.PagingState
 import dev.icerock.moko.paging.RefreshStrategy
 import dev.icerock.moko.remotestate.RemoteState
 import dev.icerock.moko.remotestate.mapError
-import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -21,24 +20,34 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
 import kotlin.math.min
 
 class ListViewModel : ViewModel() {
-    private val pagination: Pagination<ProductItem> = Pagination(
+    val pagination: Pagination<ProductItem> = Pagination(
         dataSource = PageSizePagingDataSource(
             pageSize = PAGE_SIZE,
+            calculateNextPage = { currentList ->
+                val currentListSize = currentList?.size
+
+                if (currentListSize == null || currentListSize == 0) {
+                    0
+                } else {
+                    ceil(currentListSize.toDouble() / PAGE_SIZE).toInt()
+                }
+            },
             loadPage = ::loadPage
         ),
         itemKey = { item -> item.id },
         refreshStrategy = RefreshStrategy.ReplaceEverything,
         nextPageListener = { result ->
             result.onFailure {
-                Napier.e("can't load next page", it)
+                println("Next page loading failed: $it")
             }
         },
         refreshListener = { result ->
             result.onFailure {
-                Napier.e("can't load refresh", it)
+                println("Refresh failed: $it")
             }
         }
     )
