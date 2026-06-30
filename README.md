@@ -20,7 +20,7 @@ This is a Kotlin MultiPlatform library that contains pagination logic for kotlin
 - Observing states using `StateFlow` and `RemoteState`.
 
 ## Requirements
-- Gradle 8.10+
+- Gradle 8.0+
 - Android API 16+
 - iOS 11.0+
 
@@ -38,7 +38,7 @@ project build.gradle.kts
 ```kotlin
 dependencies {
     commonMainApi("dev.icerock.moko:paging:0.8.0")
-    commonMainApi("dev.icerock.moko:remotestate:0.1.0")
+    commonMainApi("dev.icerock.moko:state:0.1.1")
 }
 ```
 

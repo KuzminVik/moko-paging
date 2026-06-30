@@ -18,10 +18,10 @@ android {
 }
 
 dependencies {
-    commonMainApi(projects.remotestate)
-    commonMainImplementation(libs.coroutines)
     commonMainApi(libs.mokoMvvmLiveData)
     commonMainApi(libs.mokoMvvmState)
+    commonMainApi(libs.mokoState)
+    commonMainImplementation(libs.coroutines)
 
     commonTestImplementation(kotlin("test"))
     commonTestImplementation(libs.coroutinesTest)

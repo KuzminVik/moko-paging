@@ -4,7 +4,7 @@
 
 package dev.icerock.moko.paging
 
-import dev.icerock.moko.remotestate.RemoteState
+import dev.icerock.moko.state.RemoteState
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope

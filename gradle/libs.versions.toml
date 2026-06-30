@@ -7,6 +7,7 @@ activityComposeVersion = "1.10.1"
 ktorClientVersion = "3.4.0"
 coroutinesVersion = "1.10.2"
 mokoMvvmVersion = "0.16.1"
+mokoStateVersion = "0.1.1"
 mokoPagingVersion = "0.8.0"
 
 [libraries]
@@ -24,10 +25,11 @@ ktorClient = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientVer
 mokoMvvmLiveData = { module = "dev.icerock.moko:mvvm-livedata", version.ref = "mokoMvvmVersion" }
 mokoMvvmState = { module = "dev.icerock.moko:mvvm-state", version.ref = "mokoMvvmVersion" }
 mokoMvvmFlow = { module = "dev.icerock.moko:mvvm-flow", version.ref = "mokoMvvmVersion" }
+mokoState = { module = "dev.icerock.moko:state", version.ref = "mokoStateVersion" }
 androidCoreTesting = { module = "androidx.arch.core:core-testing", version.ref = "androidCoreTestingVersion" }
 ktorClientMock = { module = "io.ktor:ktor-client-mock", version.ref = "ktorClientVersion" }
 
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinVersion" }
-androidGradlePlugin = { module = "com.android.tools.build:gradle", version = "8.6.1" }
+androidGradlePlugin = { module = "com.android.tools.build:gradle", version = "8.1" }
 mokoGradlePlugin = { module = "dev.icerock.moko:moko-gradle-plugin", version = "0.6.0" }
 mobileMultiplatformGradlePlugin = { module = "dev.icerock:mobile-multiplatform", version = "0.14.4" }

@@ -5,7 +5,7 @@
 package dev.icerock.moko.paging.utils
 
 import dev.icerock.moko.paging.PagingState
-import dev.icerock.moko.remotestate.RemoteState
+import dev.icerock.moko.state.RemoteState
 
 /**
  * Use this function to change the refresh state (isRefreshing) in a PagingState instance

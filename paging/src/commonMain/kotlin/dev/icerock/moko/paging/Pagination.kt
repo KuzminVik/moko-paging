@@ -6,7 +6,7 @@ package dev.icerock.moko.paging
 
 import dev.icerock.moko.paging.utils.withNextPageLoading
 import dev.icerock.moko.paging.utils.withRefreshing
-import dev.icerock.moko.remotestate.RemoteState
+import dev.icerock.moko.state.RemoteState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope

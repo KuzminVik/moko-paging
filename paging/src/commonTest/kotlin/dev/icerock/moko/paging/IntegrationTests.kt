@@ -4,11 +4,11 @@
 
 package dev.icerock.moko.paging
 
+import dev.icerock.moko.state.data
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respondOk
 import io.ktor.client.request.get
-import dev.icerock.moko.remotestate.data
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.fullPath
 import kotlinx.coroutines.async
