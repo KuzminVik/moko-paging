@@ -16,9 +16,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-class IntegrationTests : BaseTestsClass() {
+class IntegrationTests {
     private val httpClient = HttpClient(MockEngine) {
         engine {
             addHandler { request ->

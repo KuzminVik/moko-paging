@@ -24,9 +24,7 @@ dependencies {
     commonMainApi(libs.mokoMvvmState)
 
     commonTestImplementation(kotlin("test"))
-    androidTestImplementation(libs.androidCoreTesting)
-    androidUnitTestImplementation(libs.coroutinesTest)
+    commonTestImplementation(libs.coroutinesTest)
     commonTestImplementation(libs.ktorClient)
     commonTestImplementation(libs.ktorClientMock)
-    iosX64TestImplementation(libs.coroutines)
 }
